@@ -36,7 +36,7 @@ go get github.com/SUP2Ak/github-stats-api-go
 ```go
 package main
 import (
-    "fmt"
+    "log"
     "time"
     githubstats "github.com/sup2ak/github-stats-api-go"
 )
