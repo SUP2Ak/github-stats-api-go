@@ -1,34 +1,39 @@
+name: Release
+
 on:
   push:
     tags:
       - 'v*'
 
-name: Upload Release Assets
-
 jobs:
   build:
-    name: Upload Release Assets
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest, darwin-latest]
+        go-version: [1.23]
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v2
 
-      - name: Generate build files
-        uses: thatisuday/go-cross-build@v1.0.2
-        with:
-          platforms: 'linux/amd64, linux/ppc64le, darwin/amd64, darwin/arm64, windows/amd64'
-          package: '.'
-          name: 'githubstats'
-          compress: 'true'
-          dest: 'dist'
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: ${{ matrix.go-version }}
 
-      - name: Publish Binaries
-        uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          release_name: Release ${{ github.ref }}
-          tag: ${{ github.ref }}
-          file: dist/*
-          file_glob: true
-          overwrite: true
+    - name: Build
+      run: |
+        GOOS=${{ matrix.os }} GOARCH=amd64 go build -o githubstats-${{ matrix.os }} ./...
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ github.ref }}
+        files: |
+          githubstats-ubuntu-latest
+          githubstats-windows-latest.exe
+          githubstats-macos-latest
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
